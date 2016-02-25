@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mongo="http://www.springframework.org/schema/data/mongo"
+	xmlns:aop ="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation=
+	"http://www.springframework.org/schema/context
+     http://www.springframework.org/schema/context/spring-context-3.0.xsd
+     http://www.springframework.org/schema/data/mongo
+     http://www.springframework.org/schema/data/mongo/spring-mongo-1.0.xsd
+	 http://www.springframework.org/schema/beans 
+	 http://www.springframework.org/schema/beans/spring-beans.xsd
+	 http://www.springframework.org/schema/aop 
+	 http://www.springframework.org/schema/aop/spring-aop-2.5.xsd"
+	 >
+
+<!-- Specify some VPLEX Connections  -->
+	
+	<bean id="vplex_connection_lancer" scope="prototype" class="repositoryapp.data.connection.vplex.VplexConnection">
+			<constructor-arg name="host" value="10.110.19.140" index="0"/>
+			<constructor-arg name="username" value="service" index="1"/>
+			<constructor-arg name="password" value="Mi@Dim7T" index="2"/>
+	</bean>
+	
+	<bean id="vplex_connection_whippet" scope="prototype" class="repositoryapp.data.connection.vplex.VplexConnection">
+			<constructor-arg name="host" value="10.108.69.9" index="0"/>
+			<constructor-arg name="username" value="service" index="1"/>
+			<constructor-arg name="password" value="Mi@Dim7T" index="2"/>
+	</bean>
+	
+		<bean id="vplex_connection_liberty" scope="prototype" class="repositoryapp.data.connection.vplex.VplexConnection">
+			<constructor-arg name="host" value="10.108.69.240" index="0"/>
+			<constructor-arg name="username" value="service" index="1"/>
+			<constructor-arg name="password" value="Mi@Dim7T" index="2"/>
+	</bean>
+	
+	<bean id="vplex_client_lancer" scope="prototype" class="repositoryapp.data.connection.vplex.VplexClient">
+		<constructor-arg ref="vplex_connection_lancer"/>
+	</bean>
+	
+	<bean id="vplex_client_liberty" scope="prototype" class="repositoryapp.data.connection.vplex.VplexClient">
+		<constructor-arg ref="vplex_connection_liberty"/>
+	</bean>
+	
+	<bean id="vplex_client_whippet" scope="prototype" class="repositoryapp.data.connection.vplex.VplexClient">
+		<constructor-arg ref="vplex_connection_whippet"/>
+	</bean>
+	
+	<mongo:mongo id="mongo" host="LSVEB089.LSS.EMC.COM" port="27017"/>
+	
+	<bean id="mongoTemplate" class="org.springframework.data.mongodb.core.MongoTemplate">
+		<constructor-arg ref="mongo"/>
+		<constructor-arg name="databaseName" value="Liberty_VPlex_Cluster"/>
+	</bean>
+
+	<bean id="mongoDataInjectionService" class="repositoryapp.integration.injection.MongoDataInjectionService">
+		<property name="VPLEXClient" ref="vplex_client_lancer"/>
+		<property name="collectionName" value="VirtualVolumes"/>
+		<property name="mongoServices" ref="mongoTemplate"/>
+		<property name="resourcePath" value="vplex/clusters/*/virtual-volumes/*"/>
+	</bean>
+
+	<bean id="dataInjectionDriver" class="repositoryapp.integration.injection.DataInjectionDriver">
+		<property name="dataInjectionService" ref="mongoDataInjectionService"/>
+	</bean>
+  
+	<bean id="loggingAspect" class="repositoryapp.aspects.LoggingAspect"/>
+	<!--   
+	<aop:config>
+		<aop:pointcut id="mongoDataServicePC" expression="execution(* createManaged*(..))" />
+		<aop:aspect ref="loggingAspect">
+			<aop:before method="beforeMethodLogging"
+						pointcut-ref="mongoDataServicePC"/>
+		</aop:aspect>
+	</aop:config>
+	-->
+
+</beans>
